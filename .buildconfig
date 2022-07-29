@@ -1,0 +1,11 @@
+[default]
+name=Default
+runtime=podman:d33bb38324224a7ef096ac7f3eac82ccc4d244a8ac515f103269fa8e4d7b09e6
+toolchain=default
+config-opts=
+run-opts=
+prefix=/var/home/carnagemode/.var/app/org.gnome.Builder/cache/gnome-builder/install/pixelmagic/podman-d33bb38324224a7ef096ac7f3eac82ccc4d244a8ac515f103269fa8e4d7b09e6
+app-id=
+postbuild=
+prebuild=
+default=true
