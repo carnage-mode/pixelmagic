@@ -25,11 +25,11 @@ struct BITMAPINFOHEADER
 	std::uint16_t bmpColorPlanes;
 	std::uint16_t bmpBitsPerPixel;
 	std::uint32_t bmpCompression;
-	std::uint32_t biSizeImage;
-	std::int32_t  biXPelsPerMeter;
-	std::int32_t  biYPelsPerMeter;
-	std::uint32_t biClrUsed;
-	std::uint32_t biClrImportant;
+	std::uint32_t bmpImageSize;
+	std::int32_t  bmpXPixelsPerMeter;
+	std::int32_t  bmpYPixelsPerMeter;
+	std::uint32_t bmpColorNum;
+	std::uint32_t bmpImportantColorNum;
 };
 
 
