@@ -1,6 +1,13 @@
 #include <iostream>
 #include <cstdint>
 
+struct pixel
+{
+	std::uint8_t red {};
+	std::uint8_t green {};
+	std::uint8_t blue {};
+};
+
 struct BITMAPFILEHEADER
 {
 	std::uint16_t bmpID;
