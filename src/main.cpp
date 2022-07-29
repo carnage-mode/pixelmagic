@@ -13,7 +13,16 @@ struct BITMAPFILEHEADER
 struct BITMAPINFOHEADER
 {
 	std::uint32_t bmpDIBSize;
-	std::int32_t bmpWidth;
+	std::int32_t  bmpWidth;
+	std::int32_t  bmpHeight;
+	std::uint16_t bmpColorPlanes;
+	std::uint16_t bmpBitsPerPixel;
+	std::uint32_t bmpCompression;
+	std::uint32_t biSizeImage;
+	std::int32_t  biXPelsPerMeter;
+	std::int32_t  biYPelsPerMeter;
+	std::uint32_t biClrUsed;
+	std::uint32_t biClrImportant;
 };
 
 
