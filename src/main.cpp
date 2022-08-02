@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cstdint>
 
-struct pixel
+struct Pixel
 {
 	std::uint8_t red {};
 	std::uint8_t green {};
