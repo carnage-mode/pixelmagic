@@ -8,9 +8,10 @@ struct Pixel
 	std::uint8_t blue {};
 };
 
-struct BITMAPFILEHEADER
+using BITMAPFILEID = std::uint16_t; //Helps us check the file format is correct
+
+struct BITMAPFILEHEADER //
 {
-	std::uint16_t bmpID;
 	std::uint32_t bmpSize;
 	std::uint16_t bmpReserve1;
 	std::uint16_t bmpReserve2;
