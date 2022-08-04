@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdint>
 #include <fstream>
+#include <cmath>
 
 struct Pixel
 {
@@ -34,7 +35,11 @@ struct BITMAPINFOHEADER
 	std::uint32_t bmpImportantColorNum;
 };
 
-void grayscale (Pixel** pixelMatrix, std::int32_t height, std::int32_t width);
+namespace Filter
+{
+	void grayscale (Pixel** pixelMatrix, std::int32_t height, std::int32_t width);
+	void sepia (Pixel** pixelMatrix, std::int32_t height, std::int32_t width);
+}
 
 int main()
 {
@@ -111,8 +116,8 @@ int main()
 			imageFile.seekg(infoheader.bmpWidth % 4, std::ios::cur);
 		}
 
-		grayscale(pixelMatrix, infoheader.bmpHeight, infoheader.bmpWidth);
-		std::cout << "Adding grayscale\n";
+		Filter::sepia(pixelMatrix, infoheader.bmpHeight, infoheader.bmpWidth);
+		std::cout << "Adding sepia\n";
 
 		imageFile.seekg(fileheader.bmpPixelArrayOffset);
 
@@ -140,18 +145,60 @@ int main()
 	return 0;
 }
 
-void grayscale (Pixel** pixelMatrix, std::int32_t height, std::int32_t width)
+namespace Filter
 {
-	for (int row {0}; row < height; ++row)
+	void grayscale (Pixel** pixelMatrix, std::int32_t height, std::int32_t width)
 	{
-		for (int col {0}; col < width; ++col)
+		for (int row {0}; row < height; ++row)
 		{
-			int average {pixelMatrix[row][col].blue + pixelMatrix[row][col].green + pixelMatrix[row][col].red};
-			average /= 3;
-			pixelMatrix[row][col].blue = average;
-			pixelMatrix[row][col].green = average;
-			pixelMatrix[row][col].red = average;
-		}
+			for (int col {0}; col < width; ++col)
+			{
+				int average {pixelMatrix[row][col].blue + pixelMatrix[row][col].green + pixelMatrix[row][col].red};
+				average /= 3;
 
+				pixelMatrix[row][col].blue = average;
+				pixelMatrix[row][col].green = average;
+				pixelMatrix[row][col].red = average;
+			}
+
+		}
+	}
+
+	void sepia (Pixel** pixelMatrix, std::int32_t height, std::int32_t width)
+	{
+		for (int row {0}; row < height; ++row)
+		{
+			for (int col {0}; col < width; ++col)
+			{
+				double tB {static_cast<double>(pixelMatrix[row][col].blue)};
+				double tG {static_cast<double>(pixelMatrix[row][col].green)};
+				double tR {static_cast<double>(pixelMatrix[row][col].red)};
+
+				double cB{tB};
+				double cG{tG};
+				double cR{tR};
+
+				tB = round((0.272 * cR) + (0.534 * cG) + (0.131 * cB));
+				tG = round((0.349 * cR) + (0.686 * cG) + (0.168 * cB));
+				tR = round((0.393 * cR) + (0.769 * cG) + (0.189 * cB));
+
+				if (tB > 255)
+					tB = 255;
+
+				if (tG > 255)
+					tG = 255;
+
+				if (tR > 255)
+					tR = 255;
+
+				pixelMatrix[row][col].blue = static_cast<int>(tB);
+				pixelMatrix[row][col].green = static_cast<int>(tG);
+				pixelMatrix[row][col].red = static_cast<int>(tR);
+
+			}
+
+		}
 	}
 }
+
+
