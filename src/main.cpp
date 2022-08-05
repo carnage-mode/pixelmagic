@@ -39,6 +39,7 @@ namespace Filter
 {
 	void grayscale (Pixel** pixelMatrix, std::int32_t height, std::int32_t width);
 	void sepia (Pixel** pixelMatrix, std::int32_t height, std::int32_t width);
+	void reflection (Pixel** pixelMatrix, std::int32_t height, std::int32_t width);
 }
 
 int main()
@@ -116,7 +117,7 @@ int main()
 			imageFile.seekg(infoheader.bmpWidth % 4, std::ios::cur);
 		}
 
-		Filter::sepia(pixelMatrix, infoheader.bmpHeight, infoheader.bmpWidth);
+		Filter::reflection(pixelMatrix, infoheader.bmpHeight, infoheader.bmpWidth);
 		std::cout << "Adding sepia\n";
 
 		imageFile.seekg(fileheader.bmpPixelArrayOffset);
@@ -197,6 +198,29 @@ namespace Filter
 
 			}
 
+		}
+	}
+
+	void reflection (Pixel** pixelMatrix, std::int32_t height, std::int32_t width)
+	{
+		for (int row {0}; row < height; ++row)
+		{
+			Pixel* rowData {new Pixel[width]};
+			for (int col {0}; col < width; ++col)
+			{
+				rowData[width - col - 1].blue = pixelMatrix[row][col].blue;
+				rowData[width - col - 1].green = pixelMatrix[row][col].green;
+				rowData[width - col - 1].red = pixelMatrix[row][col].red;
+			}
+
+			for (int col {0}; col < width; ++col)
+			{
+				pixelMatrix[row][col].blue = rowData[col].blue;
+				pixelMatrix[row][col].green = rowData[col].green;
+				pixelMatrix[row][col].red = rowData[col].red;
+			}
+
+			delete[] rowData;
 		}
 	}
 }
