@@ -40,6 +40,7 @@ namespace Filter
 	void grayscale (Pixel** pixelMatrix, std::int32_t height, std::int32_t width);
 	void sepia (Pixel** pixelMatrix, std::int32_t height, std::int32_t width);
 	void reflection (Pixel** pixelMatrix, std::int32_t height, std::int32_t width);
+	void blur (Pixel** pixelMatrix, std::int32_t height, std::int32_t width);
 }
 
 int main()
@@ -117,8 +118,8 @@ int main()
 			imageFile.seekg(infoheader.bmpWidth % 4, std::ios::cur);
 		}
 
-		Filter::reflection(pixelMatrix, infoheader.bmpHeight, infoheader.bmpWidth);
-		std::cout << "Adding sepia\n";
+		Filter::blur(pixelMatrix, infoheader.bmpHeight, infoheader.bmpWidth);
+		std::cout << "Adding blur\n";
 
 		imageFile.seekg(fileheader.bmpPixelArrayOffset);
 
@@ -222,6 +223,96 @@ namespace Filter
 
 			delete[] rowData;
 		}
+	}
+
+	void blur (Pixel** pixelMatrix, std::int32_t height, std::int32_t width)
+	{
+		int radius {20};
+		int matrixWidth{(radius * 2) + 1};
+		// int matrixElements{matrixWidth * matrixWidth};
+
+
+		Pixel** copyPixelMatrix {new Pixel*[height]};
+		for (int i{0}; i < height; ++i)
+			copyPixelMatrix[i] = new Pixel[width];
+
+		for (int row {0}; row < height; ++row)
+		{
+			for (int col {0}; col < width; ++col)
+			{
+				double sumBlue {0};
+				double sumGreen {0};
+				double sumRed{0};
+
+				for (int rowS {row - radius}; rowS <= row + radius; ++rowS)
+				{
+					int rowSB {rowS};
+					if (rowS < 0)
+						continue;
+					if (rowS >= height)
+						continue;
+
+					sumBlue += pixelMatrix[rowSB][col].blue;
+					sumGreen += pixelMatrix[rowSB][col].green;
+					sumRed += pixelMatrix[rowSB][col].red;
+				}
+
+				sumBlue = round(sumBlue / matrixWidth);
+				sumGreen = round(sumGreen / matrixWidth);
+				sumRed = round(sumRed / matrixWidth);
+
+				copyPixelMatrix[row][col].blue = static_cast<int>(sumBlue);
+				copyPixelMatrix[row][col].green = static_cast<int>(sumGreen);
+				copyPixelMatrix[row][col].red = static_cast<int>(sumRed);
+			}
+
+		}
+
+		for (int col {0}; col < width; ++col)
+		{
+			for (int row {0}; row < height; ++row)
+			{
+				double sumBlue {0};
+				double sumGreen {0};
+				double sumRed{0};
+
+				for (int colS {col - radius}; colS <= col + radius; ++colS)
+				{
+					int colSB {colS};
+					if (colS < 0)
+						continue;
+					if (colS >= width)
+						continue;
+					sumBlue += copyPixelMatrix[row][colSB].blue;
+					sumGreen += copyPixelMatrix[row][colSB].green;
+					sumRed += copyPixelMatrix[row][colSB].red;
+				}
+
+				sumBlue = round(sumBlue / matrixWidth);
+				sumGreen = round(sumGreen / matrixWidth);
+				sumRed = round(sumRed / matrixWidth);
+
+				copyPixelMatrix[row][col].blue = static_cast<int>(sumBlue);
+				copyPixelMatrix[row][col].green = static_cast<int>(sumGreen);
+				copyPixelMatrix[row][col].red = static_cast<int>(sumRed);
+			}
+		}
+
+		for (int row {0}; row < height; ++row)
+		{
+			for (int col {0}; col < width; ++col)
+			{
+
+				pixelMatrix[row][col].blue = copyPixelMatrix[row][col].blue;
+				pixelMatrix[row][col].green = copyPixelMatrix[row][col].green;
+				pixelMatrix[row][col].red = copyPixelMatrix[row][col].red;
+			}
+
+		}
+
+		for(int i {0}; i < height; ++i)
+			delete[] copyPixelMatrix[i];
+		delete[] copyPixelMatrix;
 	}
 }
 
