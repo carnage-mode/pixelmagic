@@ -257,13 +257,9 @@ namespace Filter
 					sumRed += pixelMatrix[rowSB][col].red;
 				}
 
-				sumBlue = round(sumBlue / matrixWidth);
-				sumGreen = round(sumGreen / matrixWidth);
-				sumRed = round(sumRed / matrixWidth);
-
-				copyPixelMatrix[row][col].blue = static_cast<int>(sumBlue);
-				copyPixelMatrix[row][col].green = static_cast<int>(sumGreen);
-				copyPixelMatrix[row][col].red = static_cast<int>(sumRed);
+				copyPixelMatrix[row][col].blue = static_cast<int>(round(sumBlue / matrixWidth));
+				copyPixelMatrix[row][col].green = static_cast<int>(round(sumGreen / matrixWidth));
+				copyPixelMatrix[row][col].red = static_cast<int>(round(sumRed / matrixWidth));
 			}
 
 		}
@@ -288,13 +284,9 @@ namespace Filter
 					sumRed += copyPixelMatrix[row][colSB].red;
 				}
 
-				sumBlue = round(sumBlue / matrixWidth);
-				sumGreen = round(sumGreen / matrixWidth);
-				sumRed = round(sumRed / matrixWidth);
-
-				copyPixelMatrix[row][col].blue = static_cast<int>(sumBlue);
-				copyPixelMatrix[row][col].green = static_cast<int>(sumGreen);
-				copyPixelMatrix[row][col].red = static_cast<int>(sumRed);
+				copyPixelMatrix[row][col].blue = static_cast<int>(round(sumBlue / matrixWidth));
+				copyPixelMatrix[row][col].green = static_cast<int>(round(sumGreen / matrixWidth));
+				copyPixelMatrix[row][col].red = static_cast<int>(round(sumRed / matrixWidth));
 			}
 		}
 
