@@ -244,17 +244,16 @@ namespace Filter
 				double sumGreen {0};
 				double sumRed{0};
 
-				for (int rowS {row - radius}; rowS <= row + radius; ++rowS)
+				for (int colS {col - radius}; colS <= col + radius; ++colS)
 				{
-					int rowSB {rowS};
-					if (rowS < 0)
+					int colSB {colS};
+					if (colS < 0)
 						continue;
-					if (rowS >= height)
+					if (colS >= width)
 						continue;
-
-					sumBlue += pixelMatrix[rowSB][col].blue;
-					sumGreen += pixelMatrix[rowSB][col].green;
-					sumRed += pixelMatrix[rowSB][col].red;
+					sumBlue += pixelMatrix[row][colSB].blue;
+					sumGreen += pixelMatrix[row][colSB].green;
+					sumRed += pixelMatrix[row][colSB].red;
 				}
 
 				copyPixelMatrix[row][col].blue = static_cast<int>(round(sumBlue / matrixWidth));
@@ -272,16 +271,17 @@ namespace Filter
 				double sumGreen {0};
 				double sumRed{0};
 
-				for (int colS {col - radius}; colS <= col + radius; ++colS)
+				for (int rowS {row - radius}; rowS <= row + radius; ++rowS)
 				{
-					int colSB {colS};
-					if (colS < 0)
+					int rowSB {rowS};
+					if (rowS < 0)
 						continue;
-					if (colS >= width)
+					if (rowS >= height)
 						continue;
-					sumBlue += copyPixelMatrix[row][colSB].blue;
-					sumGreen += copyPixelMatrix[row][colSB].green;
-					sumRed += copyPixelMatrix[row][colSB].red;
+
+					sumBlue += copyPixelMatrix[rowSB][col].blue;
+					sumGreen += copyPixelMatrix[rowSB][col].green;
+					sumRed += copyPixelMatrix[rowSB][col].red;
 				}
 
 				copyPixelMatrix[row][col].blue = static_cast<int>(round(sumBlue / matrixWidth));
