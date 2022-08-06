@@ -228,9 +228,6 @@ namespace Filter
 	void blur (Pixel** pixelMatrix, std::int32_t height, std::int32_t width)
 	{
 		int radius {20};
-		int matrixWidth{(radius * 2) + 1};
-		// int matrixElements{matrixWidth * matrixWidth};
-
 
 		Pixel** copyPixelMatrix {new Pixel*[height]};
 		for (int i{0}; i < height; ++i)
@@ -243,6 +240,7 @@ namespace Filter
 				double sumBlue {0};
 				double sumGreen {0};
 				double sumRed{0};
+				int count {0};
 
 				for (int colS {col - radius}; colS <= col + radius; ++colS)
 				{
@@ -251,14 +249,16 @@ namespace Filter
 						continue;
 					if (colS >= width)
 						continue;
+					++count;
+
 					sumBlue += pixelMatrix[row][colSB].blue;
 					sumGreen += pixelMatrix[row][colSB].green;
 					sumRed += pixelMatrix[row][colSB].red;
 				}
 
-				copyPixelMatrix[row][col].blue = static_cast<int>(round(sumBlue / matrixWidth));
-				copyPixelMatrix[row][col].green = static_cast<int>(round(sumGreen / matrixWidth));
-				copyPixelMatrix[row][col].red = static_cast<int>(round(sumRed / matrixWidth));
+				copyPixelMatrix[row][col].blue = static_cast<int>(round(sumBlue / count));
+				copyPixelMatrix[row][col].green = static_cast<int>(round(sumGreen / count));
+				copyPixelMatrix[row][col].red = static_cast<int>(round(sumRed / count));
 			}
 
 		}
@@ -270,6 +270,7 @@ namespace Filter
 				double sumBlue {0};
 				double sumGreen {0};
 				double sumRed{0};
+				int count {0};
 
 				for (int rowS {row - radius}; rowS <= row + radius; ++rowS)
 				{
@@ -279,14 +280,15 @@ namespace Filter
 					if (rowS >= height)
 						continue;
 
+					++count;
 					sumBlue += copyPixelMatrix[rowSB][col].blue;
 					sumGreen += copyPixelMatrix[rowSB][col].green;
 					sumRed += copyPixelMatrix[rowSB][col].red;
 				}
 
-				copyPixelMatrix[row][col].blue = static_cast<int>(round(sumBlue / matrixWidth));
-				copyPixelMatrix[row][col].green = static_cast<int>(round(sumGreen / matrixWidth));
-				copyPixelMatrix[row][col].red = static_cast<int>(round(sumRed / matrixWidth));
+				copyPixelMatrix[row][col].blue = static_cast<int>(round(sumBlue / count));
+				copyPixelMatrix[row][col].green = static_cast<int>(round(sumGreen / count));
+				copyPixelMatrix[row][col].red = static_cast<int>(round(sumRed / count));
 			}
 		}
 
