@@ -10,6 +10,13 @@ struct Pixel
 	std::uint8_t blue {};
 };
 
+struct SummedPixel
+{
+	int red {};
+	int green {};
+	int blue {};
+};
+
 using BITMAPFILEID = std::uint16_t; //Helps us check the file format is correct
 
 struct BITMAPFILEHEADER //
@@ -228,86 +235,142 @@ namespace Filter
 	void blur (Pixel** pixelMatrix, std::int32_t height, std::int32_t width)
 	{
 		int radius {20};
+		int matrixWidth {(2 * radius) + 1};
+		int matrixArea {matrixWidth * matrixWidth};
 
 		Pixel** copyPixelMatrix {new Pixel*[height]};
 		for (int i{0}; i < height; ++i)
 			copyPixelMatrix[i] = new Pixel[width];
 
-		for (int row {0}; row < height; ++row)
+		SummedPixel** sumtable {new SummedPixel*[height]};
+		for (int i{0}; i < height; ++i)
+			sumtable[i] = new SummedPixel[width];
+
+
+		sumtable[0][0].blue = pixelMatrix[0][0].blue;
+		sumtable[0][0].green = pixelMatrix[0][0].green;
+		sumtable[0][0].red = pixelMatrix[0][0].red;
+
+
+		for (int i{1}; i < height; ++i)
 		{
-			for (int col {0}; col < width; ++col)
+			sumtable[i][0].blue = sumtable[i - 1][0].blue + pixelMatrix[i][0].blue;
+			sumtable[i][0].green = sumtable[i - 1][0].green + pixelMatrix[i][0].green;
+			sumtable[i][0].red = sumtable[i - 1][0].red + pixelMatrix[i][0].red;
+		}
+
+		for (int j{1}; j < width; ++j)
+		{
+			sumtable[0][j].blue = sumtable[0][j  - 1].blue + pixelMatrix[0][j].blue;
+			sumtable[0][j].green = sumtable[0][j  - 1].green + pixelMatrix[0][j].green;
+			sumtable[0][j].red = sumtable[0][j  - 1].red + pixelMatrix[0][j].red;
+		}
+
+		for (int i{1}; i < height; ++i)
+			for (int j{1}; j < width; ++j)
 			{
-				double sumBlue {0};
-				double sumGreen {0};
-				double sumRed{0};
-				int count {0};
+				sumtable[i][j].blue = pixelMatrix[i][j].blue + sumtable[i - 1][j].blue + sumtable[i][j - 1].blue - sumtable[i - 1][j - 1].blue;
+				sumtable[i][j].green = pixelMatrix[i][j].green + sumtable[i - 1][j].green + sumtable[i][j - 1].green - sumtable[i - 1][j - 1].green;
+				sumtable[i][j].red = pixelMatrix[i][j].red + sumtable[i - 1][j].red + sumtable[i][j - 1].red - sumtable[i - 1][j - 1].red;
+			}
 
-				for (int colS {col - radius}; colS <= col + radius; ++colS)
+		for (int i{0}; i < height; ++i)
+			for (int j{0}; j < width; ++j)
+			{
+				double avBlue{0};
+				double avGreen{0};
+				double avRed {0};
+
+				int matrixAreaCopy {matrixArea};
+
+				int iS{i + radius};
+				int jS{j + radius};
+
+				if (iS >= height)
 				{
-					int colSB {colS};
-					if (colS < 0)
-						continue;
-					if (colS >= width)
-						continue;
-					++count;
-
-					sumBlue += pixelMatrix[row][colSB].blue;
-					sumGreen += pixelMatrix[row][colSB].green;
-					sumRed += pixelMatrix[row][colSB].red;
+					iS = height - 1;
+					matrixAreaCopy -= (radius - (iS - i)) * matrixWidth;
 				}
 
-				copyPixelMatrix[row][col].blue = static_cast<int>(round(sumBlue / count));
-				copyPixelMatrix[row][col].green = static_cast<int>(round(sumGreen / count));
-				copyPixelMatrix[row][col].red = static_cast<int>(round(sumRed / count));
-			}
-
-		}
-
-		for (int col {0}; col < width; ++col)
-		{
-			for (int row {0}; row < height; ++row)
-			{
-				double sumBlue {0};
-				double sumGreen {0};
-				double sumRed{0};
-				int count {0};
-
-				for (int rowS {row - radius}; rowS <= row + radius; ++rowS)
+				if (jS >= width)
 				{
-					int rowSB {rowS};
-					if (rowS < 0)
-						continue;
-					if (rowS >= height)
-						continue;
-
-					++count;
-					sumBlue += copyPixelMatrix[rowSB][col].blue;
-					sumGreen += copyPixelMatrix[rowSB][col].green;
-					sumRed += copyPixelMatrix[rowSB][col].red;
+					jS = width - 1;
+					matrixAreaCopy -= (radius - (jS - j)) * matrixWidth;
 				}
 
-				copyPixelMatrix[row][col].blue = static_cast<int>(round(sumBlue / count));
-				copyPixelMatrix[row][col].green = static_cast<int>(round(sumGreen / count));
-				copyPixelMatrix[row][col].red = static_cast<int>(round(sumRed / count));
-			}
-		}
+				if ((i + radius) >= height && (j + radius) >= width)
+					matrixAreaCopy += (radius - (iS - i)) * (radius - (jS - j));
 
-		for (int row {0}; row < height; ++row)
-		{
-			for (int col {0}; col < width; ++col)
+				avBlue = sumtable[iS][jS].blue;
+				avGreen = sumtable[iS][jS].green;
+				avRed = sumtable[iS][jS].red;
+
+				int iF{i + radius - matrixWidth};
+				int jF{j + radius - matrixWidth};
+
+				if (iF >=  0 && jF >=0)
+				{
+					avBlue -= sumtable[iF][jS].blue;
+					avGreen -= sumtable[iF][jS].green;
+					avRed -= sumtable[iF][jS].red;
+
+					avBlue -= sumtable[iS][jF].blue;
+					avGreen -= sumtable[iS][jF].green;
+					avRed -= sumtable[iS][jF].red;
+
+					avBlue += sumtable[iF][jF].blue;
+					avGreen += sumtable[iF][jF].green;
+					avRed += sumtable[iF][jF].red;
+				}
+				else if (iF >= 0)
+				{
+					avBlue -= sumtable[iF][jS].blue;
+					avGreen -= sumtable[iF][jS].green;
+					avRed -= sumtable[iF][jS].red;
+				}
+				else if (jF >= 0)
+				{
+					avBlue -= sumtable[iS][jF].blue;
+					avGreen -= sumtable[iS][jF].green;
+					avRed -= sumtable[iS][jF].red;
+				}
+
+				if (i - radius < 0)
+					matrixAreaCopy -= (radius - i) * matrixWidth;
+
+				if (j - radius < 0)
+					matrixAreaCopy -= (radius - j) * matrixWidth;
+
+				if((i - radius ) < 0 && (j - radius) < 0)
+					matrixAreaCopy += (radius - i) * (radius - j);
+
+				if((i - radius ) < 0 && (j + radius) >= width)
+					matrixAreaCopy += (radius - i) * (radius - (jS - j));
+				if((i + radius) >= height && (j - radius) < 0)
+					matrixAreaCopy += (radius - (iS - i)) * (radius - j);
+
+				copyPixelMatrix[i][j].blue = static_cast<int>(round(avBlue / matrixAreaCopy));
+				copyPixelMatrix[i][j].green = static_cast<int>(round(avGreen / matrixAreaCopy));
+				copyPixelMatrix[i][j].red = static_cast<int>(round(avRed / matrixAreaCopy));
+			}
+
+		for (int i{0}; i < height; ++i)
+			for (int j{0}; j < width; ++j)
 			{
-
-				pixelMatrix[row][col].blue = copyPixelMatrix[row][col].blue;
-				pixelMatrix[row][col].green = copyPixelMatrix[row][col].green;
-				pixelMatrix[row][col].red = copyPixelMatrix[row][col].red;
+				pixelMatrix [i][j].blue = copyPixelMatrix[i][j].blue;
+				pixelMatrix [i][j].green = copyPixelMatrix[i][j].green;
+				pixelMatrix [i][j].red = copyPixelMatrix[i][j].red;
 			}
-
-		}
 
 		for(int i {0}; i < height; ++i)
 			delete[] copyPixelMatrix[i];
 		delete[] copyPixelMatrix;
+
+		for(int i {0}; i < height; ++i)
+			delete[] sumtable[i];
+		delete[] sumtable;
 	}
+
 }
 
 
