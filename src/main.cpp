@@ -207,7 +207,7 @@ int main()
 					break;
 				case 7:
 					exit = true;
-					break;
+					continue;
 
 				default:
 					std::cerr << "\nInvalid input!\n\n";
@@ -230,7 +230,7 @@ int main()
 			std::cout << "Success\n\n";
 		}
 
-
+		std::cout << "\nGood bye!\n";
 		imageFile.close();
 
 		for(int i {0}; i < infoheader.bmpHeight; ++i)
