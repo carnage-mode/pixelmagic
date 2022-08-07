@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdint>
 #include <fstream>
+#include <string>
 #include <cmath>
 
 struct Pixel
@@ -42,8 +43,13 @@ struct BITMAPINFOHEADER
 	std::uint32_t bmpImportantColorNum;
 };
 
+void ignoreLine();
+void inputFailure();
+std::string mainMenu();
+
 namespace Filter
 {
+	void revert (Pixel** pixelMatrix, Pixel** pixelMatrixOG, std::int32_t height, std::int32_t width);
 	void grayscale (Pixel** pixelMatrix, std::int32_t height, std::int32_t width);
 	void sepia (Pixel** pixelMatrix, std::int32_t height, std::int32_t width);
 	void reflection (Pixel** pixelMatrix, std::int32_t height, std::int32_t width);
@@ -55,20 +61,22 @@ int main()
 {
 	while (true)
 	{
-		std::cout << "Name of the image file (BMP format only): ";
-		std::string fileName {};
-		std::getline(std::cin >> std::ws, fileName);
+		std::string fileName {mainMenu()};
 		std::fstream imageFile(fileName.c_str(), std::ios::in | std::ios::out | std::ios::binary);
 
 		if (imageFile.fail())
 		{
+			std::cout << '\n';
 			std::cerr << fileName <<" can't be found. Try again\n";
+			std::cout << '\n';
 			continue;
 		}
 		else
 			std::cout << "Found the file!\n";
 
 		BITMAPFILEID id;
+		BITMAPFILEHEADER fileheader;
+		BITMAPINFOHEADER infoheader;
 		imageFile.read((char*)(&id), sizeof(id));
 
 		if (id != 0x4D42)
@@ -77,9 +85,6 @@ int main()
 			imageFile.close();
 			continue;
 		}
-
-		BITMAPFILEHEADER fileheader;
-		BITMAPINFOHEADER infoheader;
 
 		imageFile.read((char*)(&fileheader), sizeof(fileheader));
 		imageFile.read((char*)(&infoheader), sizeof(infoheader));
@@ -105,12 +110,20 @@ int main()
 			continue;
 		}
 
+		if (infoheader.bmpHeight < 0)
+			infoheader.bmpHeight = -infoheader.bmpHeight;
+		if (infoheader.bmpWidth < 0)
+			infoheader.bmpWidth =- infoheader.bmpWidth;
+
 		Pixel** pixelMatrix {new Pixel*[infoheader.bmpHeight]};
 		for (int i{0}; i < infoheader.bmpHeight; ++i)
 			pixelMatrix[i] = new Pixel[infoheader.bmpWidth];
 
-		if (infoheader.bmpHeight < 0)
-			infoheader.bmpHeight = -infoheader.bmpHeight;
+		Pixel** pixelMatrixOG {new Pixel*[infoheader.bmpHeight]};
+		for (int i{0}; i < infoheader.bmpHeight; ++i)
+			pixelMatrixOG[i] = new Pixel[infoheader.bmpWidth];
+
+
 
 		imageFile.seekg(fileheader.bmpPixelArrayOffset);
 
@@ -119,35 +132,114 @@ int main()
 			for (int col {0}; col < infoheader.bmpWidth; ++col)
 			{
 				pixelMatrix[row][col].blue = imageFile.get();
+				pixelMatrixOG[row][col].blue = pixelMatrix[row][col].blue;
+
 				pixelMatrix[row][col].green = imageFile.get();
+				pixelMatrixOG[row][col].green = pixelMatrix[row][col].green;
+
 				pixelMatrix[row][col].red = imageFile.get();
+				pixelMatrixOG[row][col].red = pixelMatrix[row][col].red;
 			}
 
 			imageFile.seekg(infoheader.bmpWidth % 4, std::ios::cur);
 		}
 
-		Filter::edgeDetect(pixelMatrix, infoheader.bmpHeight, infoheader.bmpWidth);
-		std::cout << "Adding blur\n";
+		bool edited {false};
+		bool exit {false};
 
-		imageFile.seekg(fileheader.bmpPixelArrayOffset);
-
-		for (int row {0}; row < infoheader.bmpHeight; ++row)
+		while (!exit)
 		{
-			for (int col {0}; col < infoheader.bmpWidth; ++col)
+			std::cout << "1. Add Grayscale\n";
+			std::cout << "2. Add Sepia\n";
+			std::cout << "3. Reflect the image\n";
+			std::cout << "4. Add blur\n";
+			std::cout << "5. Detect edges\n";
+			std::cout << "6. Revert image to original\n";
+			std::cout << "7. Save and Exit\n";
+			std::cout << "> ";
+			int input {0};
+
+			std::cin >> input;
+
+			if (std::cin.fail())
 			{
-				imageFile.put(pixelMatrix[row][col].blue);
-				imageFile.put(pixelMatrix[row][col].green);
-				imageFile.put(pixelMatrix[row][col].red);
+				inputFailure();
+				continue;// and remove the bad input
+			}
+			else
+				ignoreLine();
+
+			switch(input)
+			{
+				case 1:
+					std::cout << "Adding Grayscale\n";
+					Filter::grayscale(pixelMatrix, infoheader.bmpHeight, infoheader.bmpWidth);
+					edited = true;
+					break;
+				case 2:
+					std::cout << "Adding Sepia\n";
+					Filter::sepia(pixelMatrix, infoheader.bmpHeight, infoheader.bmpWidth);
+					edited = true;
+					break;
+				case 3:
+					std::cout << "Reflecting image\n";
+					Filter::reflection(pixelMatrix, infoheader.bmpHeight, infoheader.bmpWidth);
+					edited = true;
+					break;
+				case 4:
+					std::cout << "Bluring the image\n";
+					Filter::blur(pixelMatrix, infoheader.bmpHeight, infoheader.bmpWidth);
+					edited = true;
+					break;
+				case 5:
+					std::cout << "Adding edge detection\n";
+					Filter::edgeDetect(pixelMatrix, infoheader.bmpHeight, infoheader.bmpWidth);
+					edited = true;
+					break;
+				case 6:
+					if (!edited)
+					{
+						std::cout << "No changes applied. Cannot revert!\n\n";
+						continue;
+					}
+					Filter::revert(pixelMatrix, pixelMatrixOG, infoheader.bmpHeight, infoheader.bmpWidth);
+					edited = false;
+					break;
+				case 7:
+					exit = true;
+					break;
+
+				default:
+					std::cerr << "\nInvalid input!\n\n";
+					continue;
 			}
 
-			imageFile.seekg(infoheader.bmpWidth % 4, std::ios::cur);
+			imageFile.seekg(fileheader.bmpPixelArrayOffset);
+
+			for (int row {0}; row < infoheader.bmpHeight; ++row)
+			{
+				for (int col {0}; col < infoheader.bmpWidth; ++col)
+				{
+					imageFile.put(pixelMatrix[row][col].blue);
+					imageFile.put(pixelMatrix[row][col].green);
+					imageFile.put(pixelMatrix[row][col].red);
+				}
+
+				imageFile.seekg(infoheader.bmpWidth % 4, std::ios::cur);
+			}
+			std::cout << "Success\n\n";
 		}
-		std::cout << "Success\n";
+
+
 		imageFile.close();
 
 		for(int i {0}; i < infoheader.bmpHeight; ++i)
 			delete[] pixelMatrix[i];
 		delete[] pixelMatrix;
+
+		for(int i {0}; i < infoheader.bmpHeight; ++i)
+			delete[] pixelMatrixOG[i];
+		delete[] pixelMatrixOG;
 
 		break;
 	}
@@ -155,8 +247,73 @@ int main()
 	return 0;
 }
 
+void ignoreLine()
+{
+	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+}
+
+void inputFailure()
+{
+	std::cin.clear();
+	ignoreLine();
+	std::cerr << "\nInvalid input!\n\n";
+}
+
+std::string mainMenu()
+{
+	std::string fileName {};
+
+	while(true)
+	{
+		std::cout << "1. Add Image file\n";
+		std::cout << "2. Exit\n";
+		std::cout << "> ";
+		int input {0};
+
+		std::cin >> input;
+
+		if (std::cin.fail())
+		{
+			inputFailure();
+			continue;// and remove the bad input
+		}
+		else
+			ignoreLine();
+
+		switch(input)
+		{
+			case 1:
+				std::cout << "Name of the image file (BMP format only): ";
+				std::getline(std::cin >> std::ws, fileName);
+				break;
+			case 2:
+				std::cout << "Good bye!\n";
+				std::exit(0);
+			default:
+				std::cerr << "\nInvalid input!\n\n";
+				continue;
+		}
+		break;
+	}
+	return fileName;
+}
+
 namespace Filter
 {
+	void revert (Pixel** pixelMatrix, Pixel** pixelMatrixOG, std::int32_t height, std::int32_t width)
+	{
+		for (int row {0}; row < height; ++row)
+		{
+			for (int col {0}; col < width; ++col)
+			{
+				pixelMatrix[row][col].blue = pixelMatrixOG[row][col].blue;
+				pixelMatrix[row][col].green = pixelMatrixOG[row][col].green;
+				pixelMatrix[row][col].red = pixelMatrixOG[row][col].red;
+			}
+
+		}
+	}
+
 	void grayscale (Pixel** pixelMatrix, std::int32_t height, std::int32_t width)
 	{
 		for (int row {0}; row < height; ++row)
