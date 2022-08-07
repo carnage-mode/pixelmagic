@@ -48,6 +48,7 @@ namespace Filter
 	void sepia (Pixel** pixelMatrix, std::int32_t height, std::int32_t width);
 	void reflection (Pixel** pixelMatrix, std::int32_t height, std::int32_t width);
 	void blur (Pixel** pixelMatrix, std::int32_t height, std::int32_t width);
+	void edgeDetect (Pixel** pixelMatrix, std::int32_t height, std::int32_t width);
 }
 
 int main()
@@ -125,7 +126,7 @@ int main()
 			imageFile.seekg(infoheader.bmpWidth % 4, std::ios::cur);
 		}
 
-		Filter::blur(pixelMatrix, infoheader.bmpHeight, infoheader.bmpWidth);
+		Filter::edgeDetect(pixelMatrix, infoheader.bmpHeight, infoheader.bmpWidth);
 		std::cout << "Adding blur\n";
 
 		imageFile.seekg(fileheader.bmpPixelArrayOffset);
@@ -240,11 +241,11 @@ namespace Filter
 
 		Pixel** copyPixelMatrix {new Pixel*[height]};
 		for (int i{0}; i < height; ++i)
-			copyPixelMatrix[i] = new Pixel[width];
+			copyPixelMatrix[i] = new Pixel[width] {0};
 
 		SummedPixel** sumtable {new SummedPixel*[height]};
 		for (int i{0}; i < height; ++i)
-			sumtable[i] = new SummedPixel[width];
+			sumtable[i] = new SummedPixel[width] {0};
 
 
 		sumtable[0][0].blue = pixelMatrix[0][0].blue;
@@ -371,6 +372,54 @@ namespace Filter
 		delete[] sumtable;
 	}
 
+	void edgeDetect (Pixel** pixelMatrix, std::int32_t height, std::int32_t width)
+	{
+		Pixel** copyPixelMatrix {new Pixel*[height + 2]};
+		for (int i{0}; i < height + 2; ++i)
+			copyPixelMatrix[i] = new Pixel[width + 2] {0};
+
+		for (int i{0}; i < height; ++i)
+			for (int j{0}; j < width; ++j)
+			{
+				copyPixelMatrix[i + 1][j + 1].blue = pixelMatrix[i][j].blue;
+				copyPixelMatrix[i + 1][j + 1].green = pixelMatrix[i][j].green;
+				copyPixelMatrix[i + 1][j + 1].red = pixelMatrix[i][j].red;
+			}
+
+		grayscale(copyPixelMatrix, height, width);
+
+
+		for (int i{1}; i < height + 1; ++i)
+			for (int j{1}; j < width + 1; ++j)
+			{
+				int sum{0};
+				double sumGy{0};
+				double sumGx{0};
+
+				sumGx -= copyPixelMatrix[i-1][j-1].red + (2 * copyPixelMatrix[i][j-1].red ) + copyPixelMatrix[i+1][j-1].red;
+				sumGx += copyPixelMatrix[i-1][j+1].red  + (2 * copyPixelMatrix[i][j+1].red) + copyPixelMatrix[i+1][j+1].red;
+				sumGx *= sumGx;
+
+				sumGy -= copyPixelMatrix[i-1][j-1].red + (2 * copyPixelMatrix[i-1][j].red) + copyPixelMatrix[i-1][j+1].red;
+				sumGy += copyPixelMatrix[i+1][j-1].red + (2 * copyPixelMatrix[i+1][j].red) + copyPixelMatrix[i+1][j+1].red;
+				sumGy *= sumGy;
+
+				sum = static_cast<int>(round(sqrt(sumGx + sumGy)));
+
+				if (sum > 255)
+					sum = 255;
+
+				pixelMatrix[i - 1][j - 1].blue = sum;
+				pixelMatrix[i - 1][j - 1].green = sum;
+				pixelMatrix[i - 1][j - 1].red = sum;
+
+			}
+
+
+		for(int i {0}; i < height + 2; ++i)
+			delete[] copyPixelMatrix[i];
+		delete[] copyPixelMatrix;
+	}
 }
 
 
