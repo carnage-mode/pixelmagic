@@ -198,36 +198,37 @@ int main()
 			switch(input)
 			{
 				case 1:
-					std::cout << "Adding Grayscale\n";
+					std::cout << "Adding Grayscale...\n";
 					Filter::grayscale(pixelMatrix, infoheader.bmpHeight, infoheader.bmpWidth);
 					edited = true;
 					break;
 				case 2:
-					std::cout << "Adding Sepia\n";
+					std::cout << "Adding Sepia...\n";
 					Filter::sepia(pixelMatrix, infoheader.bmpHeight, infoheader.bmpWidth);
 					edited = true;
 					break;
 				case 3:
-					std::cout << "Reflecting image\n";
+					std::cout << "Reflecting image...\n";
 					Filter::reflection(pixelMatrix, infoheader.bmpHeight, infoheader.bmpWidth);
 					edited = true;
 					break;
 				case 4:
-					std::cout << "Bluring the image\n";
+					std::cout << "Bluring the image...\n";
 					Filter::blur(pixelMatrix, infoheader.bmpHeight, infoheader.bmpWidth);
 					edited = true;
 					break;
 				case 5:
-					std::cout << "Adding edge detection\n";
+					std::cout << "Adding edge detection...\n";
 					Filter::edgeDetect(pixelMatrix, infoheader.bmpHeight, infoheader.bmpWidth);
 					edited = true;
 					break;
 				case 6:
 					if (!edited)
 					{
-						std::cout << "No changes applied. Cannot revert!\n\n";
+						std::cerr << "No changes applied. Cannot revert!\n\n";
 						continue;
 					}
+					std::cout << "Reverting changes... \n";
 					Filter::revert(pixelMatrix, pixelMatrixOG, infoheader.bmpHeight, infoheader.bmpWidth);
 					edited = false;
 					break;
