@@ -4,6 +4,7 @@
 #include <string>
 #include <cmath>
 
+// Defines a pixel
 struct Pixel
 {
 	std::uint8_t red {};
@@ -11,6 +12,7 @@ struct Pixel
 	std::uint8_t blue {};
 };
 
+// Used for storing summed RGB values, hence the larger datatypes
 struct SummedPixel
 {
 	int red {};
@@ -18,35 +20,42 @@ struct SummedPixel
 	int blue {};
 };
 
-using BITMAPFILEID = std::uint16_t; //Helps us check the file format is correct
+// Helps us check the file format is correct. Must always be BM when converted
+// to ASCII
+using BITMAPFILEID = std::uint16_t;
 
-struct BITMAPFILEHEADER //
+// Contains information about the type, size, and layout of the image
+struct BITMAPFILEHEADER
 {
-	std::uint32_t bmpSize;
-	std::uint16_t bmpReserve1;
-	std::uint16_t bmpReserve2;
-	std::uint32_t bmpPixelArrayOffset;
+	std::uint32_t bmpSize; // Size of image. in bytes
+	std::uint16_t bmpReserve1; // reserved, usually zero
+	std::uint16_t bmpReserve2; // reserved, usually zero
+	std::uint32_t bmpPixelArrayOffset; //offset to the bitmap bits (pixel array), in bytes
 };
 
-struct BITMAPINFOHEADER
+struct BITMAPINFOHEADER // contains metadata about the image
 {
-	std::uint32_t bmpDIBSize;
-	std::int32_t  bmpWidth;
-	std::int32_t  bmpHeight;
-	std::uint16_t bmpColorPlanes;
-	std::uint16_t bmpBitsPerPixel;
-	std::uint32_t bmpCompression;
-	std::uint32_t bmpImageSize;
-	std::int32_t  bmpXPixelsPerMeter;
-	std::int32_t  bmpYPixelsPerMeter;
-	std::uint32_t bmpColorNum;
-	std::uint32_t bmpImportantColorNum;
+	std::uint32_t bmpDIBSize; // size of this struct in bytes, 40 is the only version we support
+	std::int32_t  bmpWidth; // width of image in pixels
+	std::int32_t  bmpHeight; // height of image in pixels
+	std::uint16_t bmpColorPlanes; // must be 1,
+	std::uint16_t bmpBitsPerPixel; // the number of bits in a pixel, we only support 24
+	std::uint32_t bmpCompression; // type of compression, we only support 0 (no compression)
+	std::uint32_t bmpImageSize; // since we dont use compression, this value is not relevant
+	std::int32_t  bmpXPixelsPerMeter; // pixels per meter in x axis, used for printing
+	std::int32_t  bmpYPixelsPerMeter; // pixels per meter in y axis, used for printing
+	std::uint32_t bmpColorNum; // number of color indexes, we don't care about this in our implementation
+	std::uint32_t bmpImportantColorNum; //number of important color indexes, same as above
 };
 
+//used for error handling
 void ignoreLine();
 void inputFailure();
+
+//main menu
 std::string mainMenu();
 
+//All our filter functions live in their own namespace for organizational purposes
 namespace Filter
 {
 	void revert (Pixel** pixelMatrix, Pixel** pixelMatrixOG, std::int32_t height, std::int32_t width);
@@ -61,10 +70,13 @@ int main()
 {
 	while (true)
 	{
+		//stores the filename given by the user, calls the main menu function
 		std::string fileName {mainMenu()};
+
+		//opens th file in binary mode
 		std::fstream imageFile(fileName.c_str(), std::ios::in | std::ios::out | std::ios::binary);
 
-		if (imageFile.fail())
+		if (imageFile.fail())// continues main loop if the file fails to load
 		{
 			std::cout << '\n';
 			std::cerr << fileName <<" can't be found. Try again\n";
@@ -77,18 +89,23 @@ int main()
 		BITMAPFILEID id;
 		BITMAPFILEHEADER fileheader;
 		BITMAPINFOHEADER infoheader;
+
+		//reads the id (magic number of the file)
 		imageFile.read((char*)(&id), sizeof(id));
 
-		if (id != 0x4D42)
+		if (id != 0x4D42) //checks if the first 2 bytes are equal to the string "BM"
 		{
 			std::cerr << "File type is not BMP!\n";
-			imageFile.close();
+			imageFile.close(); //close the image
 			continue;
 		}
 
+		//reads the metadata
 		imageFile.read((char*)(&fileheader), sizeof(fileheader));
 		imageFile.read((char*)(&infoheader), sizeof(infoheader));
 
+		// Checks if the metadata uses 40 bytes,
+		// other older and newer versions of bmp are not supported
 		if (infoheader.bmpDIBSize != 40)
 		{
 			std::cerr << "Unsupported version of BMP\n";
@@ -96,6 +113,7 @@ int main()
 			continue;
 		}
 
+		// We only deal with 24 bit images
 		if (infoheader.bmpBitsPerPixel != 24)
 		{
 			std::cerr << "Only 24 bit images supported\n";
@@ -103,6 +121,7 @@ int main()
 			continue;
 		}
 
+		// We dont deal with compressed images
 		if (infoheader.bmpCompression != 0)
 		{
 			std::cerr << "Compressed images are not supported\n";
@@ -110,23 +129,29 @@ int main()
 			continue;
 		}
 
+		//inverts the height/width in case they are negative
 		if (infoheader.bmpHeight < 0)
 			infoheader.bmpHeight = -infoheader.bmpHeight;
 		if (infoheader.bmpWidth < 0)
 			infoheader.bmpWidth =- infoheader.bmpWidth;
 
+		// Dynamically allocated 2D array that uses the pixel struct
+		// used to store the bitmap (marix of pixels)
 		Pixel** pixelMatrix {new Pixel*[infoheader.bmpHeight]};
 		for (int i{0}; i < infoheader.bmpHeight; ++i)
 			pixelMatrix[i] = new Pixel[infoheader.bmpWidth];
 
+		// Another dynamically allocated 2D array, used to store
+		// a copy of the original image
 		Pixel** pixelMatrixOG {new Pixel*[infoheader.bmpHeight]};
 		for (int i{0}; i < infoheader.bmpHeight; ++i)
 			pixelMatrixOG[i] = new Pixel[infoheader.bmpWidth];
 
 
-
+		//Go to the exact byte were the pixel matrix (bitmap) starts
 		imageFile.seekg(fileheader.bmpPixelArrayOffset);
 
+		//copies the pixel matrix and stores it in memory for future manipultation
 		for (int row {0}; row < infoheader.bmpHeight; ++row)
 		{
 			for (int col {0}; col < infoheader.bmpWidth; ++col)
@@ -144,9 +169,10 @@ int main()
 			imageFile.seekg(infoheader.bmpWidth % 4, std::ios::cur);
 		}
 
-		bool edited {false};
-		bool exit {false};
+		bool edited {false}; //checks if the file is edited so as not to revert an unedited image and waste performance
+		bool exit {false}; // checks if the user wants to exit from the filter menu
 
+		//filter menu
 		while (!exit)
 		{
 			std::cout << "1. Add Grayscale\n";
@@ -164,7 +190,7 @@ int main()
 			if (std::cin.fail())
 			{
 				inputFailure();
-				continue;// and remove the bad input
+				continue;
 			}
 			else
 				ignoreLine();
@@ -214,8 +240,10 @@ int main()
 					continue;
 			}
 
+			//Go to the exact byte were the pixel matrix (bitmap) starts
 			imageFile.seekg(fileheader.bmpPixelArrayOffset);
 
+			//Apply changes made (if any)
 			for (int row {0}; row < infoheader.bmpHeight; ++row)
 			{
 				for (int col {0}; col < infoheader.bmpWidth; ++col)
@@ -231,8 +259,9 @@ int main()
 		}
 
 		std::cout << "\nGood bye!\n";
-		imageFile.close();
+		imageFile.close(); //close the image after final edit
 
+		//deallocate both pixel matrices
 		for(int i {0}; i < infoheader.bmpHeight; ++i)
 			delete[] pixelMatrix[i];
 		delete[] pixelMatrix;
@@ -247,6 +276,7 @@ int main()
 	return 0;
 }
 
+// error handling
 void ignoreLine()
 {
 	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -259,6 +289,7 @@ void inputFailure()
 	std::cerr << "\nInvalid input!\n\n";
 }
 
+//main menu
 std::string mainMenu()
 {
 	std::string fileName {};
@@ -275,7 +306,7 @@ std::string mainMenu()
 		if (std::cin.fail())
 		{
 			inputFailure();
-			continue;// and remove the bad input
+			continue;
 		}
 		else
 			ignoreLine();
@@ -300,6 +331,7 @@ std::string mainMenu()
 
 namespace Filter
 {
+	// reverts the pixelMatrix to it's original state
 	void revert (Pixel** pixelMatrix, Pixel** pixelMatrixOG, std::int32_t height, std::int32_t width)
 	{
 		for (int row {0}; row < height; ++row)
@@ -314,6 +346,7 @@ namespace Filter
 		}
 	}
 
+	// applies grayscale
 	void grayscale (Pixel** pixelMatrix, std::int32_t height, std::int32_t width)
 	{
 		for (int row {0}; row < height; ++row)
@@ -331,6 +364,7 @@ namespace Filter
 		}
 	}
 
+	// applies sepia
 	void sepia (Pixel** pixelMatrix, std::int32_t height, std::int32_t width)
 	{
 		for (int row {0}; row < height; ++row)
@@ -367,6 +401,7 @@ namespace Filter
 		}
 	}
 
+	//reflects the image
 	void reflection (Pixel** pixelMatrix, std::int32_t height, std::int32_t width)
 	{
 		for (int row {0}; row < height; ++row)
@@ -390,6 +425,7 @@ namespace Filter
 		}
 	}
 
+	// blurs the image
 	void blur (Pixel** pixelMatrix, std::int32_t height, std::int32_t width)
 	{
 		int radius {20};
@@ -529,6 +565,7 @@ namespace Filter
 		delete[] sumtable;
 	}
 
+	// Uses sobel operator to detect edges
 	void edgeDetect (Pixel** pixelMatrix, std::int32_t height, std::int32_t width)
 	{
 		Pixel** copyPixelMatrix {new Pixel*[height + 2]};
