@@ -436,11 +436,11 @@ namespace Filter
 
 		Pixel** copyPixelMatrix {new Pixel*[height]};
 		for (int i{0}; i < height; ++i)
-			copyPixelMatrix[i] = new Pixel[width] {0};
+			copyPixelMatrix[i] = new Pixel[width];
 
 		SummedPixel** sumtable {new SummedPixel*[height]};
 		for (int i{0}; i < height; ++i)
-			sumtable[i] = new SummedPixel[width] {0};
+			sumtable[i] = new SummedPixel[width];
 
 
 		sumtable[0][0].blue = pixelMatrix[0][0].blue;
@@ -572,7 +572,7 @@ namespace Filter
 	{
 		Pixel** copyPixelMatrix {new Pixel*[height + 2]};
 		for (int i{0}; i < height + 2; ++i)
-			copyPixelMatrix[i] = new Pixel[width + 2] {0};
+			copyPixelMatrix[i] = new Pixel[width + 2];
 
 		for (int i{0}; i < height; ++i)
 			for (int j{0}; j < width; ++j)
