@@ -1,4 +1,5 @@
 #include <iostream>
+#include <limits>
 #include <cstdint>
 #include <fstream>
 #include <string>
@@ -141,7 +142,7 @@ int main()
 		for (int i{0}; i < infoheader.bmpHeight; ++i)
 			pixelMatrix[i] = new Pixel[infoheader.bmpWidth];
 
-		// Another dynamically allocated 2D array, used to store
+		// Create another dynamically allocated 2D array, used to store
 		// a copy of the original image
 		Pixel** pixelMatrixOG {new Pixel*[infoheader.bmpHeight]};
 		for (int i{0}; i < infoheader.bmpHeight; ++i)
@@ -616,5 +617,6 @@ namespace Filter
 		delete[] copyPixelMatrix;
 	}
 }
+
 
 
