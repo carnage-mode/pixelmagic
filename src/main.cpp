@@ -134,7 +134,7 @@ int main()
 		if (infoheader.bmpHeight < 0)
 			infoheader.bmpHeight = -infoheader.bmpHeight;
 		if (infoheader.bmpWidth < 0)
-			infoheader.bmpWidth =- infoheader.bmpWidth;
+			infoheader.bmpWidth = -infoheader.bmpWidth;
 
 		// Dynamically allocated 2D array that uses the pixel struct
 		// used to store the bitmap (marix of pixels)
