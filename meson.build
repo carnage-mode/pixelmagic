@@ -3,7 +3,12 @@ project('pixelmagic', ['cpp', 'c'],
     meson_version: '>= 0.59.0',
   default_options: [ 'warning_level=3',
                      'werror=true',
-                     'cpp_std=gnu++2a',
+                     'cpp_std=gnu++20',
+                     'cpp_args=-Wall -Weffc++ -Wextra -Wsign-conversion -pedantic-errors',
+                     'b_sanitize=leak',
+                     'b_sanitize=thread',
+                     'b_sanitize=memory',
+                     'b_sanitize=address,undefined',
                    ],
 )
 
