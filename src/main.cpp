@@ -16,9 +16,9 @@ struct Pixel
 // Used for storing summed RGB values, hence the larger datatypes
 struct SummedPixel
 {
-	int red {};
-	int green {};
-	int blue {};
+	std::uint64_t red {};
+	std::uint64_t green {};
+	std::uint64_t blue {};
 };
 
 // Helps us check the file format is correct. Must always be BM when converted
