@@ -250,9 +250,9 @@ int main()
 			{
 				for (int col {0}; col < infoheader.bmpWidth; ++col)
 				{
-					imageFile.put(pixelMatrix[row][col].blue);
-					imageFile.put(pixelMatrix[row][col].green);
-					imageFile.put(pixelMatrix[row][col].red);
+					imageFile.put(static_cast<char>(pixelMatrix[row][col].blue));
+					imageFile.put(static_cast<char>(pixelMatrix[row][col].green));
+					imageFile.put(static_cast<char>(pixelMatrix[row][col].red));
 				}
 
 				imageFile.seekg(infoheader.bmpWidth % 4, std::ios::cur);
