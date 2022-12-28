@@ -137,7 +137,7 @@ int main()
 			infoheader.bmpWidth = -infoheader.bmpWidth;
 
 		// Dynamically allocated 2D array that uses the pixel struct
-		// used to store the bitmap (marix of pixels)
+		// used to store the bitmap 
 		Pixel** pixelMatrix {new Pixel*[infoheader.bmpHeight]};
 		for (int i{0}; i < infoheader.bmpHeight; ++i)
 			pixelMatrix[i] = new Pixel[infoheader.bmpWidth];
